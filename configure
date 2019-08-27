@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Configure GES Disc dot files used by wget
+# See https://disc.gsfc.nasa.gov/information/howto?title=How%20to%20Download%20Data%20Files%20from%20HTTPS%20Service%20with%20wget
+# for more information.
+
+gen_files(){
+	echo "machine urs.earthdata.nasa.gov login ${1} password ${2}" > $HOME/.netrc
+	touch $HOME/.urs_cookies
+	exit 0
+}
+
+[[ $# -eq 2 ]] && gen_files $1 $2
+
+printf "Enter GES Username: "
+read username
+printf "Enter GES Password: "
+read -s password
+echo
+
+gen_files $username $password

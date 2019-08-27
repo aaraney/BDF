@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# Download GES DISC data to a dir, forcing_download,
+# by means of a passed in file of urls
+
+# Austin Raney 6-25-19
+
+# Constants 
+
+# Current working directory
+WD="$(pwd)"
+
+# Whole pathname of input url file
+FN="$(realpath ${1})"
+
+# Number of URLs in url file
+FLEN="$(wc -l "${1}" | sed "s/  *//" | cut -d" " -f1)"
+
+# Number of concurrent downloads
+PARNUM="${2:-4}"
+
+# Check for Mac OSX
+if [ "$(uname)" == "Darwin" ]; then
+	download_files(){
+		# if you don't have this command, install
+		# it with `brew install findutils`
+	gxargs -a "$1" -I {} -P"$2" forcing_download {}
+	}
+else
+	download_files(){
+	xargs -a "$1" -I {} -P"$2" forcing_download {}
+	}
+fi
+
+# Was at least one arg passed
+[ $# -lt 1 ] && echo "Please provide file" && exit 1
+# if [ $# -lt 1 ]; then echo "Please provide file"; exit 1; fi
+
+# Determine if dir needs to be created
+if [ $(basename "$WD") == "forcing_downloads" ];then
+	--
+else
+	mkdir -p forcing_downloads
+	cd forcing_downloads
+fi
+
+# Initial number of files in download directory
+dwn_num=$(ls | wc -l | sed "s/  *//" | cut -d" " -f1)
+if [ $dwn_num -eq 0 ];then
+	download_files "$FN" "$PARNUM"
+else
+	while [ $FLEN -ne $dwn_num ];do
+		# grep a process expanded `ls` command using it
+		# to check if files names exhist in both download
+		# directory and passed input file
+		download_files <(grep -v -f <(ls) "$FN") "$PARNUM"
+		dwn_num=$(ls | wc -l | sed "s/  *//" | cut -d" " -f1)
+	done
+fi
+echo "All files downloaded";
+cd "$WD";
